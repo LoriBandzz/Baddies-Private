@@ -704,29 +704,44 @@ local TW_FAST=TweenInfo.new(0.15,Enum.EasingStyle.Sine,Enum.EasingDirection.Out)
 local TW_OPEN=TweenInfo.new(0.45,Enum.EasingStyle.Exponential,Enum.EasingDirection.Out)
 local TW_SPRING=TweenInfo.new(0.5,Enum.EasingStyle.Elastic,Enum.EasingDirection.Out)
 
+local existingInterfaces = {
+	"LANDONS_PRIVATE",
+	"LANDONS_MOBILE",
+	"LANDONS_SNEAK"
+}
+
+for _, guiName in ipairs(existingInterfaces) do
+	local existing = playerGui:FindFirstChild(guiName)
+
+	if existing then
+		existing:Destroy()
+	end
+end
+
 local sg=Instance.new("ScreenGui")
-sg.Name="BLOSSOM_PRIVATE"; sg.ResetOnSpawn=false; sg.IgnoreGuiInset=true
+sg.Name="LANDONS_PRIVATE"; sg.ResetOnSpawn=false; sg.IgnoreGuiInset=true
 sg.ZIndexBehavior=Enum.ZIndexBehavior.Sibling; sg.Parent=playerGui
 
 local atualizarGUI
 local infoLabelRef=nil
 
 local function buildMobileUI()
-	local mSg=Instance.new("ScreenGui"); mSg.Name="BLOSSOM_MOBILE"; mSg.ResetOnSpawn=false
+	local mSg=Instance.new("ScreenGui"); mSg.Name="LANDONS_MOBILE"; mSg.ResetOnSpawn=false
 	mSg.IgnoreGuiInset=true; mSg.ZIndexBehavior=Enum.ZIndexBehavior.Sibling; mSg.Parent=playerGui
 
 	local ToggleButton=Instance.new("TextButton")
 	ToggleButton.Name = "Landons Hub"
-	ToggleButton.Size = UDim2.fromOffset(30,30)
+	ToggleButton.Size = UDim2.fromOffset(36, 36)
 	ToggleButton.Position = UDim2.new(1,-40,0.5,-15)
-	ToggleButton.BackgroundColor3 = C_BG
-	ToggleButton.BackgroundTransparency = 0.15
+	ToggleButton.BackgroundColor3 = Color3.new(1, 1, 1)
+	ToggleButton.BackgroundTransparency = 0
 	ToggleButton.BorderSizePixel = 0
-	ToggleButton.Text = "⭐"
-	ToggleButton.TextSize = 19
-	ToggleButton.TextColor3 = C_ON
+	ToggleButton.Text = "★"
+	ToggleButton.TextSize = 23
+	ToggleButton.TextColor3 = Color3.new(1, 1, 1)
+	ToggleButton.AutoButtonColor = false
 	ToggleButton.Font = Enum.Font.GothamBold
-	ToggleButton.ZIndex = 10
+	ToggleButton.ZIndex = 100
 	ToggleButton.Parent = mSg
 
 	Instance.new("UICorner",ToggleButton).CornerRadius =UDim.new(1,0)
@@ -735,7 +750,26 @@ local function buildMobileUI()
 	ToggleStroke.Color = C_SEP
 	ToggleStroke.Thickness=1.2
 	ToggleStroke.Parent=ToggleButton
+	ToggleStroke.Color = Color3.fromRGB(255, 190, 224)
+	ToggleStroke.Thickness = 1.5
 
+	addGradient(ToggleButton, 135, {
+		ColorSequenceKeypoint.new(0,
+			Color3.fromRGB(237, 131, 178)),
+		ColorSequenceKeypoint.new(0.5,
+			Color3.fromRGB(192, 45, 112)),
+		ColorSequenceKeypoint.new(1,
+			Color3.fromRGB(101, 19, 55))
+	})
+
+	whiteButtonText(ToggleButton)
+
+	local starText = ToggleButton:FindFirstChild("ButtonText")
+
+	if starText then
+		starText.ZIndex = 101
+	end
+	
 	local mP=Instance.new("Frame")
 	mP.Size = UDim2.fromOffset(450,280)
 	mP.AnchorPoint = Vector2.new(0.5,0.5)
@@ -775,16 +809,55 @@ local function buildMobileUI()
 
 		uiScale.Scale = math.min(
 			settings.Scale,
-			(viewport.X - 30) / 450,
-			(viewport.Y - 30) / 280
+			(viewport.X - 24) / 450,
+			(viewport.Y - 24) / 280
 		)
 	end
+	
+	local function keepOnScreen(object)
+		local camera = workspace.CurrentCamera
+		if not camera then return end
 
+		local viewport = camera.ViewportSize
+		local size = object.AbsoluteSize
+		local position = object.AbsolutePosition
+		local margin = 5
+
+		local x = math.clamp(
+			position.X,
+			margin,
+			math.max(margin, viewport.X - size.X - margin)
+		)
+
+		local y = math.clamp(
+			position.Y,
+			margin,
+			math.max(margin, viewport.Y - size.Y - margin)
+		)
+
+		local correctionX = x - position.X
+		local correctionY = y - position.Y
+
+		object.Position = UDim2.new(
+			object.Position.X.Scale,
+			object.Position.X.Offset + correctionX,
+			object.Position.Y.Scale,
+			object.Position.Y.Offset + correctionY
+		)
+	end
+	
 	updateScale()
 
 	workspace.CurrentCamera
 		:GetPropertyChangedSignal("ViewportSize")
-		:Connect(updateScale)
+		:Connect(function()
+			updateScale()
+
+			task.defer(function()
+				keepOnScreen(mP)
+				keepOnScreen(ToggleButton)
+			end)
+		end)
 	
 	local dragging=false
 	local dragStart=nil
@@ -803,14 +876,25 @@ local function buildMobileUI()
 
 	UIS.InputChanged:Connect(function(input)
 		if not dragging then return end
-		if input.UserInputType~=Enum.UserInputType.Touch and input.UserInputType~=Enum.UserInputType.MouseMovement then return end
-		local delta=input.Position-dragStart
-		if delta.Magnitude>8 then moved=true end
+
+		if input.UserInputType ~= Enum.UserInputType.Touch
+			and input.UserInputType ~= Enum.UserInputType.MouseMovement then
+			return
+		end
+
+		local delta = input.Position - dragStart
+
+		if delta.Magnitude > 8 then moved = true end
 		if not moved then return end
-		ToggleButton.Position=UDim2.new(
-			startPosition.X.Scale,startPosition.X.Offset+delta.X,
-			startPosition.Y.Scale,startPosition.Y.Offset+delta.Y
+
+		ToggleButton.Position = UDim2.new(
+			startPosition.X.Scale,
+			startPosition.X.Offset + delta.X,
+			startPosition.Y.Scale,
+			startPosition.Y.Offset + delta.Y
 		)
+
+		keepOnScreen(ToggleButton)
 	end)
 
 	UIS.InputEnded:Connect(function(input)
@@ -841,20 +925,70 @@ local function buildMobileUI()
 	local mH = Instance.new("Frame")
 	mH.Size = UDim2.new(1, -16, 0, 44)
 	mH.Position = UDim2.fromOffset(8, 6)
-	mH.BackgroundTransparency = 1
+	mH.BackgroundColor3 = Color3.fromRGB(65, 12, 36)
+	mH.BackgroundTransparency = 0.35
+	mH.BorderSizePixel = 0
+
+	Instance.new("UICorner", mH).CornerRadius =
+		UDim.new(0, 10)
 	mH.Parent = mP
 
 	local mT = Instance.new("TextLabel")
-	mT.Size = UDim2.new(1, -80, 1, 0)
+	mT.Size = UDim2.new(1, -100, 0, 26)
 	mT.Position = UDim2.fromOffset(8, 0)
-	mT.BackgroundTransparency = 1
 	mT.Text = "Landon's Hub"
+	mT.TextSize = 22
 	mT.TextColor3 = Color3.new(1, 1, 1)
-	mT.TextSize = 23
 	mT.Font = Enum.Font.GothamBold
-	mT.TextXAlignment = Enum.TextXAlignment.Left
-	mT.Parent = mH
 
+	local panelDragging = false
+	local panelDragStart
+	local panelStartPosition
+	local panelDragInput
+
+	mH.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.Touch
+			or input.UserInputType == Enum.UserInputType.MouseButton1 then
+
+			panelDragging = true
+			panelDragInput = input
+			panelDragStart = input.Position
+			panelStartPosition = mP.Position
+		end
+	end)
+
+	UIS.InputChanged:Connect(function(input)
+		if not panelDragging then return end
+
+		local validInput = input == panelDragInput
+			or (
+				panelDragInput.UserInputType ==
+				Enum.UserInputType.MouseButton1
+				and input.UserInputType ==
+				Enum.UserInputType.MouseMovement
+			)
+
+		if not validInput then return end
+
+		local delta = input.Position - panelDragStart
+
+		mP.Position = UDim2.new(
+			panelStartPosition.X.Scale,
+			panelStartPosition.X.Offset + delta.X,
+			panelStartPosition.Y.Scale,
+			panelStartPosition.Y.Offset + delta.Y
+		)
+		
+		keepOnScreen(mP)
+	end)
+
+	UIS.InputEnded:Connect(function(input)
+		if input == panelDragInput then
+			panelDragging = false
+			panelDragInput = nil
+		end
+	end)
+	
 	local close = Instance.new("TextButton")
 	close.Size = UDim2.fromOffset(28, 26)
 	close.Position = UDim2.new(1, -34, 0.5, -13)
@@ -877,7 +1011,44 @@ local function buildMobileUI()
 	close.Activated:Connect(function()
 		mP.Visible = false
 	end)
+	
+	local minimize = Instance.new("TextButton")
+	minimize.Name = "Minimize"
+	minimize.Size = UDim2.fromOffset(28, 26)
+	minimize.Position = UDim2.new(1, -68, 0.5, -13)
+	minimize.BackgroundColor3 = Color3.new(1, 1, 1)
+	minimize.BackgroundTransparency = 0.85
+	minimize.BorderSizePixel = 0
+	minimize.Text = "−"
+	minimize.TextSize = 22
+	minimize.TextColor3 = Color3.new(1, 1, 1)
+	minimize.Font = Enum.Font.GothamBold
+	minimize.AutoButtonColor = false
+	minimize.Parent = mH
+	
+	local headerSubtitle = Instance.new("TextLabel")
+	headerSubtitle.Size = UDim2.new(1, -100, 0, 14)
+	headerSubtitle.Position = UDim2.fromOffset(9, 26)
+	headerSubtitle.BackgroundTransparency = 1
+	headerSubtitle.Text = "LANDON'S WORKSITE"
+	headerSubtitle.TextColor3 = Color3.fromRGB(255, 220, 238)
+	headerSubtitle.TextSize = 9
+	headerSubtitle.Font = Enum.Font.GothamMedium
+	headerSubtitle.TextXAlignment = Enum.TextXAlignment.Left
+	headerSubtitle.Parent = mH
+	
+	Instance.new("UICorner", minimize).CornerRadius =
+		UDim.new(0, 8)
 
+	local minimizeStroke = Instance.new("UIStroke")
+	minimizeStroke.Color = Color3.new(1, 1, 1)
+	minimizeStroke.Transparency = 0.5
+	minimizeStroke.Parent = minimize
+
+	minimize.Activated:Connect(function()
+		mP.Visible = false
+	end)
+	
 	local tabNames = {
 		"Combat",
 		"Defense",
@@ -926,11 +1097,11 @@ local function buildMobileUI()
 	sidebarLayout.Parent = sidebar
 
 	local sidebarPadding = Instance.new("UIPadding")
-	sidebarPadding.PaddingTop = UDim.new(0,6)
+	sidebarLayout.Padding = UDim.new(0, 5)
 	sidebarPadding.PaddingLeft = UDim.new(0,6)
 	sidebarPadding.PaddingRight = UDim.new(0,6)
 	sidebarPadding.Parent = sidebar
-
+	
 	local content = Instance.new("Frame")
 	content.Name = "Content"
 	content.Size = UDim2.new(1,-130,1,-56)
@@ -977,7 +1148,7 @@ local function buildMobileUI()
 
 		local button = Instance.new("TextButton")
 		button.Name = name .. "Tab"
-		button.Size = UDim2.new(1, 0, 0, 28)
+		button.Size = UDim2.new(1, 0, 0, 30)
 		button.BackgroundColor3 = Color3.new(1, 1, 1)
 		button.BackgroundTransparency = 0.85
 		button.BorderSizePixel = 0
@@ -1026,17 +1197,20 @@ local function buildMobileUI()
 		page.Size = UDim2.fromScale(1,1)
 		page.BackgroundTransparency = 1
 		page.BorderSizePixel = 0
-		page.ScrollBarThickness = 2
-		page.ScrollBarImageColor3 = C_ON
+		page.ScrollBarThickness = 3
+		page.ScrollBarImageColor3 = C_KEY
 		page.CanvasSize = UDim2.fromOffset(0,0)
 		page.AutomaticCanvasSize = Enum.AutomaticSize.Y
 		page.ScrollingDirection = Enum.ScrollingDirection.Y
 		page.Visible = false
 		page.Parent = content
+		page.ScrollBarImageTransparency = 0.2
+		page.ClipsDescendants = true
+		page.ElasticBehavior = Enum.ElasticBehavior.Never
 
 		local layout = Instance.new("UIListLayout")
 		layout.SortOrder = Enum.SortOrder.LayoutOrder
-		layout.Padding = UDim.new(0,6)
+		layout.Padding = UDim.new(0,8)
 		layout.Parent = page
 
 		local padding = Instance.new("UIPadding")
@@ -1083,13 +1257,79 @@ local function buildMobileUI()
 
 		return row
 	end
+	
+	local function createSection(parent, title, description)
+		local section = Instance.new("Frame")
+		section.Size = UDim2.new(1, -8, 0, 46)
+		section.BackgroundColor3 = Color3.fromRGB(101, 19, 55)
+		section.BackgroundTransparency = 0.2
+		section.BorderSizePixel = 0
 
+		Instance.new("UICorner", section).CornerRadius =
+			UDim.new(0, 8)
+		section.LayoutOrder = -100
+		section.Parent = parent
+
+		local heading = Instance.new("TextLabel")
+		heading.Size = UDim2.new(1, -16, 0, 24)
+		heading.Position = UDim2.fromOffset(8, 0)
+		heading.BackgroundTransparency = 1
+		heading.Text = title
+		heading.TextColor3 = Color3.fromRGB(255, 255, 255)
+		heading.TextStrokeColor3 = C_TITLE
+		heading.TextStrokeTransparency = 0.65
+		heading.TextSize = 19
+		heading.Font = Enum.Font.GothamBold
+		heading.TextXAlignment = Enum.TextXAlignment.Left
+		heading.Parent = section
+
+		local subtitle = Instance.new("TextLabel")
+		subtitle.Size = UDim2.new(1, -16, 0, 16)
+		subtitle.Position = UDim2.fromOffset(8, 24)
+		subtitle.BackgroundTransparency = 1
+		subtitle.Text = description
+		subtitle.TextColor3 = Color3.fromRGB(255, 220, 238)
+		subtitle.TextSize = 11
+		subtitle.Font = Enum.Font.GothamMedium
+		subtitle.TextXAlignment = Enum.TextXAlignment.Left
+		subtitle.Parent = section
+
+		local line = Instance.new("Frame")
+		line.Size = UDim2.new(1, -16, 0, 1)
+		line.Position = UDim2.fromOffset(8, 44)
+		line.BackgroundColor3 = C_SEP
+		line.BorderSizePixel = 0
+		line.Parent = section
+
+		return section
+	end
+	
 	local combatPage = pages["Combat"]
 	local defensePage = pages["Defense"]
 	local hitboxPage = pages["Hitbox"]
 	local miscPage = pages["Misc"]
 	local utilityPage = pages["Utility"]
 	local settingsPage = pages["Settings"]
+	
+	createSection(combatPage,
+		"Combat",
+		"Combat features and preferences")
+
+	createSection(defensePage,
+		"Defense",
+		"Defensive features and preferences")
+
+	createSection(hitboxPage,
+		"Hitbox",
+		"Hitbox configuration")
+
+	createSection(miscPage,
+		"Miscellaneous",
+		"Additional features and tools")
+
+	createSection(utilityPage,
+		"Utility",
+		"General tools and preferences")
 	
 	local settingsHeader = createRow(settingsPage, 38)
 
@@ -1364,73 +1604,267 @@ local function buildMobileUI()
 		end)
 	end)
 	
+	local function createCategory(parent, title, order)
+		local category = Instance.new("TextLabel")
+		category.Name = "Category"
+		category.Size = UDim2.new(1, -8, 0, 22)
+		category.BackgroundTransparency = 1
+		category.Text = string.upper(title)
+		category.TextColor3 = C_TITLE
+		category.TextSize = 10
+		category.Font = Enum.Font.GothamBold
+		category.TextXAlignment = Enum.TextXAlignment.Left
+		category.LayoutOrder = order or 0
+		category.Parent = parent
+
+		local padding = Instance.new("UIPadding")
+		padding.PaddingLeft = UDim.new(0, 6)
+		padding.Parent = category
+
+		return category
+	end
+	
+	local function createInfoCard(parent, title, description, order)
+		local card = createRow(parent, 58)
+		card.LayoutOrder = order or 0
+
+		local heading = Instance.new("TextLabel")
+		heading.Size = UDim2.new(1, -24, 0, 20)
+		heading.Position = UDim2.fromOffset(12, 6)
+		heading.BackgroundTransparency = 1
+		heading.Text = title
+		heading.TextColor3 = C_LABEL
+		heading.TextSize = 13
+		heading.Font = Enum.Font.GothamBold
+		heading.TextXAlignment = Enum.TextXAlignment.Left
+		heading.Parent = card
+
+		local descriptionLabel = Instance.new("TextLabel")
+		descriptionLabel.Size = UDim2.new(1, -24, 0, 26)
+		descriptionLabel.Position = UDim2.fromOffset(12, 26)
+		descriptionLabel.BackgroundTransparency = 1
+		descriptionLabel.Text = description
+		descriptionLabel.TextColor3 = C_DIM
+		descriptionLabel.TextSize = 11
+		descriptionLabel.Font = Enum.Font.Gotham
+		descriptionLabel.TextWrapped = true
+		descriptionLabel.TextXAlignment = Enum.TextXAlignment.Left
+		descriptionLabel.Parent = card
+
+		return card
+	end
+	
 	local mOrder=0
 	local function mToggle(parent, feat)
-		mOrder=mOrder+1
+		mOrder = mOrder + 1
+
 		local row = createRow(parent, 42)
 		row.LayoutOrder = mOrder
-		local d=Instance.new("Frame"); d.Size=UDim2.new(0,10,0,10); d.Position=UDim2.new(0,12,0.5,-5)
-		d.BackgroundColor3=C_OFF; d.BorderSizePixel=0; d.Parent=row; Instance.new("UICorner",d).CornerRadius=UDim.new(1,0)
-		local l=Instance.new("TextLabel"); l.Size=UDim2.new(0.65,0,1,0); l.Position=UDim2.new(0,30,0,0)
-		l.BackgroundTransparency=1; l.Text=feat.name; l.TextColor3=C_DIM; l.TextSize=12
-		l.Font=Enum.Font.GothamBold; l.TextXAlignment=Enum.TextXAlignment.Left; l.Parent=row
-		local tb=Instance.new("TextButton");tb.Size=UDim2.new(0,54,0,28);tb.Position=UDim2.new(1,-62,0.5,-14)
-		tb.BackgroundColor3=C_OFF; tb.BorderSizePixel=0; tb.Text="OFF"; tb.TextColor3=C_LABEL
-		tb.TextSize=13; tb.Font=Enum.Font.GothamBold; tb.Parent=row; Instance.new("UICorner",tb).CornerRadius=UDim.new(0,8)
-		local function upd()
-			TweenService:Create(d,TW_DOT,{BackgroundColor3=feat.state and C_ON or C_OFF}):Play()
-			TweenService:Create(tb,TW_ROW,{BackgroundColor3=feat.state and C_ON or C_OFF}):Play()
-			tb.Text=feat.state and "ON" or "OFF";tb.TextColor3 = feat.state
-				and Color3.new(1,1,1)
-				or C_LABEL
-			l.TextColor3=feat.state and C_LABEL or C_DIM
+
+		local label = Instance.new("TextLabel")
+		label.Size = UDim2.new(1, -100, 1, 0)
+		label.Position = UDim2.fromOffset(14, 0)
+		label.BackgroundTransparency = 1
+		label.Text = feat.name
+		label.TextColor3 = C_LABEL
+		label.TextSize = 13
+		label.Font = Enum.Font.GothamBold
+		label.TextXAlignment = Enum.TextXAlignment.Left
+		label.Parent = row
+		label.TextTruncate = Enum.TextTruncate.AtEnd
+		label.TextWrapped = false
+
+		local toggle = Instance.new("TextButton")
+		toggle.Size = UDim2.fromOffset(62, 26)
+		toggle.Position = UDim2.new(1, -74, 0.5, -13)
+		toggle.BackgroundColor3 = Color3.new(1, 1, 1)
+		toggle.BorderSizePixel = 0
+		toggle.Text = ""
+		toggle.AutoButtonColor = false
+		toggle.Parent = row
+
+		Instance.new("UICorner", toggle).CornerRadius =
+			UDim.new(1, 0)
+
+		local gradient = addGradient(toggle, 90, {
+			ColorSequenceKeypoint.new(0,
+				Color3.fromRGB(218, 65, 137)),
+			ColorSequenceKeypoint.new(1,
+				Color3.fromRGB(153, 28, 87))
+		})
+
+		local knob = Instance.new("Frame")
+		knob.Size = UDim2.fromOffset(20, 20)
+		knob.BackgroundColor3 = Color3.new(1, 1, 1)
+		knob.BorderSizePixel = 0
+		knob.ZIndex = toggle.ZIndex + 2
+		knob.Parent = toggle
+
+		Instance.new("UICorner", knob).CornerRadius =
+			UDim.new(1, 0)
+
+		local stateLabel = Instance.new("TextLabel")
+		stateLabel.Size = UDim2.fromOffset(34, 26)
+		stateLabel.BackgroundTransparency = 1
+		stateLabel.TextSize = 10
+		stateLabel.Font = Enum.Font.GothamBold
+		stateLabel.TextColor3 = Color3.new(1, 1, 1)
+		stateLabel.ZIndex = toggle.ZIndex + 1
+		stateLabel.Parent = toggle
+
+		local function update()
+			gradient.Enabled = feat.state
+
+			toggle.BackgroundColor3 = feat.state
+				and Color3.new(1, 1, 1)
+				or Color3.fromRGB(165, 130, 148)
+
+			knob.Position = feat.state
+				and UDim2.fromOffset(39, 3)
+				or UDim2.fromOffset(3, 3)
+
+			stateLabel.Position = feat.state
+				and UDim2.fromOffset(3, 0)
+				or UDim2.fromOffset(25, 0)
+
+			stateLabel.Text = feat.state and "ON" or "OFF"
 		end
-		local deb2=false
-		local function tog()
-			if deb2 then return end; deb2=true; task.delay(0.15,function() deb2=false end)
-			feat.state=not feat.state
-			if feat.state then feat.onActivate() else feat.onDeactivate() end; upd()
-		end
-		tb.MouseButton1Click:Connect(tog)
+
+		local busy = false
+
+		toggle.Activated:Connect(function()
+			if busy then return end
+			busy = true
+
+			feat.state = not feat.state
+
+			local success, err = pcall(function()
+				if feat.state then
+					feat.onActivate()
+				else
+					feat.onDeactivate()
+				end
+			end)
+
+			if not success then
+				feat.state = not feat.state
+				warn(err)
+			end
+
+			update()
+			busy = false
+		end)
+
+		update()
 	end
 
-	local function mInput(parent,ph,btnT,btnC,cb)
-		mOrder=mOrder+1
-		local row = createRow(parent, 44)
+	local function mInput(parent, ph, btnT, btnC, cb)
+		mOrder = mOrder + 1
+
+		local row = createRow(parent, 46)
 		row.LayoutOrder = mOrder
-		local box=Instance.new("TextBox"); box.Size=UDim2.new(0.52,-6,0,38); box.Position=UDim2.new(0,6,0.5,-19)
-		box.BackgroundColor3=C_INPUT; box.BorderSizePixel=0; box.Text=""
-		box.TextColor3=C_LABEL; box.TextSize=13; box.Font=Enum.Font.Gotham; box.PlaceholderText=ph
-		box.PlaceholderColor3=C_DIM; box.Parent=row; Instance.new("UICorner",box).CornerRadius=UDim.new(0,8)
-		local btn=Instance.new("TextButton"); btn.Size=UDim2.new(0.44,-6,0,38); btn.Position=UDim2.new(0.56,0,0.5,-19)
-		btn.BackgroundColor3=btnC; btn.BorderSizePixel=0; btn.Text=btnT; btn.TextColor3=Color3.new(1,1,1)
-		btn.TextSize=13; btn.Font=Enum.Font.GothamBold; btn.Parent=row; Instance.new("UICorner",btn).CornerRadius=UDim.new(0,8)
-		btn.MouseButton1Click:Connect(function() cb(box.Text) end); return box
+
+		local box = Instance.new("TextBox")
+		box.Size = UDim2.new(0.65, -12, 0, 32)
+		box.Position = UDim2.new(0, 8, 0.5, -16)
+		box.BackgroundColor3 = Color3.fromRGB(255, 248, 252)
+		box.BorderSizePixel = 0
+		box.Text = ""
+		box.TextColor3 = C_LABEL
+		box.PlaceholderText = ph
+		box.PlaceholderColor3 = C_DIM
+		box.TextSize = 12
+		box.Font = Enum.Font.Gotham
+		box.ClearTextOnFocus = false
+		box.Parent = row
+
+		Instance.new("UICorner", box).CornerRadius =
+			UDim.new(0, 8)
+
+		local stroke = Instance.new("UIStroke")
+		stroke.Color = C_SEP
+		stroke.Thickness = 1
+		stroke.Parent = box
+
+		local btn = Instance.new("TextButton")
+		btn.Size = UDim2.new(0.35, -10, 0, 32)
+		btn.Position = UDim2.new(0.65, 2, 0.5, -16)
+		btn.BackgroundColor3 = Color3.new(1, 1, 1)
+		btn.BorderSizePixel = 0
+		btn.Text = btnT
+		btn.TextColor3 = Color3.new(1, 1, 1)
+		btn.TextSize = 12
+		btn.Font = Enum.Font.GothamBold
+		btn.AutoButtonColor = false
+		btn.Parent = row
+
+		Instance.new("UICorner", btn).CornerRadius =
+			UDim.new(0, 8)
+
+		addGradient(btn, 90, {
+			ColorSequenceKeypoint.new(0, C_ON),
+			ColorSequenceKeypoint.new(1, C_TITLE)
+		})
+
+		whiteButtonText(btn)
+
+		btn.Activated:Connect(function()
+			cb(box.Text)
+		end)
+
+		return box
 	end
+	
+	createCategory(utilityPage, "Information", 1)
 
-	mToggle(combatPage, {
-		name = "Test Toggle",
-		state = false,
-		onActivate = function() end,
-		onDeactivate = function() end
-	})
+	createInfoCard(
+		utilityPage,
+		"Landon's Hub",
+		"Official interface for Landon's Worksite.",
+		2
+	)
 
+	createInfoCard(
+		utilityPage,
+		"Interface Version",
+		"Version 1.0 • Rose Edition",
+		3
+	)
 
+	createInfoCard(
+		utilityPage,
+		"Compatibility",
+		"Designed for mobile and desktop layouts.",
+		4
+	)
+	
 	mOrder=mOrder+1
 	local mSneak=Instance.new("TextButton"); mSneak.Size=UDim2.new(1,-8,0,52)
 	mSneak.BackgroundColor3=Color3.fromRGB(120,30,70); mSneak.BorderSizePixel=0
 	mSneak.Text="🕵 Sneak Tool ▸ Open"; mSneak.TextColor3=Color3.fromRGB(255,120,190)
 	mSneak.TextSize=14; mSneak.Font=Enum.Font.GothamBold; mSneak.LayoutOrder=mOrder; mSneak.Parent=miscPage
 	Instance.new("UICorner",mSneak).CornerRadius=UDim.new(0,10)
+	
+	mSneak.BackgroundColor3 = Color3.new(1, 1, 1)
+	mSneak.TextColor3 = Color3.new(1, 1, 1)
+	mSneak.AutoButtonColor = false
+
+	addGradient(mSneak, 90, {
+		ColorSequenceKeypoint.new(0, C_ON),
+		ColorSequenceKeypoint.new(1, C_TITLE)
+	})
+
+	whiteButtonText(mSneak)
+	
 	mSneak.MouseButton1Click:Connect(function()
-		local g=playerGui:FindFirstChild("STUNNA_SNEAK"); if not g then return end
+		local g=playerGui:FindFirstChild("LANDONS_SNEAK"); if not g then return end
 		g.Enabled=not g.Enabled
 		mSneak.Text=not g.Enabled and "🕵 Sneak Tool ▸ Open" or "🕵 Sneak Tool ▸ Close"
 	end)
 end
 
 local function buildSneakPanel()
-	local ssg=Instance.new("ScreenGui"); ssg.Name="STUNNA_SNEAK"; ssg.ResetOnSpawn=false
+	local ssg=Instance.new("ScreenGui"); ssg.Name="LANDONS_SNEAK"; ssg.ResetOnSpawn=false
 	ssg.IgnoreGuiInset=false; ssg.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
 	ssg.Enabled=false; ssg.Parent=playerGui
 	ssg.DisplayOrder = 100
@@ -1442,6 +1876,18 @@ local function buildSneakPanel()
 	sp.BorderSizePixel=0
 	sp.Active=true
 	sp.Parent=ssg
+	sp.BackgroundColor3 = Color3.new(1, 1, 1)
+
+	addGradient(sp, 115, {
+		ColorSequenceKeypoint.new(0,
+			Color3.fromRGB(101, 19, 55)),
+		ColorSequenceKeypoint.new(0.35,
+			Color3.fromRGB(166, 43, 96)),
+		ColorSequenceKeypoint.new(0.7,
+			Color3.fromRGB(237, 131, 178)),
+		ColorSequenceKeypoint.new(1,
+			Color3.fromRGB(255, 255, 255))
+	})
 	Instance.new("UICorner",sp).CornerRadius=UDim.new(0,14)
 
 	local spStroke=Instance.new("UIStroke")
@@ -1451,7 +1897,7 @@ local function buildSneakPanel()
 
 	local sb=Instance.new("Frame")
 	sb.Size=UDim2.new(1,0,0,44)
-	sb.BackgroundColor3=C_TITLE
+	sb.BackgroundTransparency = 1
 	sb.BorderSizePixel=0
 	sb.Parent=sp
 	Instance.new("UICorner",sb).CornerRadius=UDim.new(0,14)
@@ -1459,21 +1905,49 @@ local function buildSneakPanel()
 	local sbf=Instance.new("Frame")
 	sbf.Size=UDim2.new(1,0,0,14)
 	sbf.Position=UDim2.new(0,0,1,-14)
-	sbf.BackgroundColor3=C_TITLE
+	sbf.BackgroundTransparency = 1
 	sbf.BorderSizePixel=0
 	sbf.Parent=sb
 
 	local stl2=Instance.new("TextLabel")
-	stl2.Size=UDim2.new(1,-50,1,0)
+	stl2.Size = UDim2.new(1, -50, 0, 24)
+	stl2.Position = UDim2.fromOffset(12, 3)
 	stl2.Position=UDim2.new(0,12,0,0)
 	stl2.BackgroundTransparency=1
-	stl2.Text="Sneak Tool"
-	stl2.TextColor3=C_LABEL
-	stl2.TextSize=13
-	stl2.Font=Enum.Font.GothamBold
+	stl2.Text = "Sneak Tool"
+	stl2.TextColor3 = Color3.fromRGB(255, 255, 255)
+	stl2.TextSize = 17
+	stl2.Font = Enum.Font.GothamBold
 	stl2.TextXAlignment=Enum.TextXAlignment.Left
 	stl2.Parent=sb
+	
+	local playerCount = Instance.new("TextLabel")
+	playerCount.Size = UDim2.new(1, -50, 0, 14)
+	playerCount.Position = UDim2.fromOffset(12, 26)
+	playerCount.BackgroundTransparency = 1
+	playerCount.TextColor3 = Color3.fromRGB(251, 213, 231)
+	playerCount.TextSize = 10
+	playerCount.Font = Enum.Font.GothamMedium
+	playerCount.TextXAlignment = Enum.TextXAlignment.Left
+	playerCount.Parent = sb
 
+	local function updatePlayerCount()
+		local count = math.max(0, #Players:GetPlayers() - 1)
+
+		playerCount.Text = tostring(count)
+			.. (count == 1 and " player available"
+				or " players available")
+	end
+
+	Players.PlayerAdded:Connect(function()
+		task.defer(updatePlayerCount)
+	end)
+
+	Players.PlayerRemoving:Connect(function()
+		task.delay(0.1, updatePlayerCount)
+	end)
+
+	updatePlayerCount()
 
 	local cb=Instance.new("TextButton"); cb.Size=UDim2.new(0,24,0,24); cb.Position=UDim2.new(1,-30,0.5,-12)
 	cb.BackgroundColor3=C_ON; cb.BorderSizePixel=0; cb.Text="✕"; cb.TextColor3=Color3.new(1,1,1)
@@ -1495,9 +1969,17 @@ local function buildSneakPanel()
 		end
 	end)
 
-	local statusLbl=Instance.new("TextLabel"); statusLbl.Size=UDim2.new(1,-12,0,20); statusLbl.Position=UDim2.new(0,6,1,-24)
-	statusLbl.BackgroundTransparency=1; statusLbl.Text=""; statusLbl.TextColor3=C_ON; statusLbl.TextSize=11
-	statusLbl.Font=Enum.Font.Gotham; statusLbl.TextXAlignment=Enum.TextXAlignment.Left; statusLbl.Parent=sp
+	local statusLbl=Instance.new("TextLabel")
+	statusLbl.Size=UDim2.new(1,-12,0,20)
+	statusLbl.Position=UDim2.new(0,6,1,-24)
+	statusLbl.BackgroundTransparency=1
+	statusLbl.Text = "Select a player"
+	statusLbl.TextColor3 = C_LABEL
+	statusLbl.TextSize=10
+	statusLbl.Font = Enum.Font.GothamMedium
+	statusLbl.Parent=sp
+	statusLbl.TextTruncate = Enum.TextTruncate.AtEnd
+	statusLbl.TextXAlignment = Enum.TextXAlignment.Center
 
 	local ss2=Instance.new("ScrollingFrame")
 	ss2.Size=UDim2.new(1,-8,1,-72)
@@ -1505,10 +1987,14 @@ local function buildSneakPanel()
 	ss2.BackgroundTransparency=1
 	ss2.BorderSizePixel=0
 	ss2.ScrollBarThickness=3
-	ss2.ScrollBarImageColor3=C_SEP
+	ss2.ScrollBarImageTransparency = 0.2
+	ss2.ScrollBarImageColor3 = C_KEY
 	ss2.CanvasSize=UDim2.new(0,0,0,0)
 	ss2.Parent=sp
 	ss2.ZIndex = 4
+	ss2.ScrollingDirection = Enum.ScrollingDirection.Y
+	ss2.ElasticBehavior = Enum.ElasticBehavior.Never
+	ss2.ClipsDescendants = true
 
 	local sl=Instance.new("UIListLayout")
 	sl.SortOrder=Enum.SortOrder.Name
@@ -1523,10 +2009,13 @@ local function buildSneakPanel()
 		if pRows2[other] then return end
 
 		local row=Instance.new("TextButton")
-		row.Size=UDim2.new(1,-8,0,42)
-		row.BackgroundColor3=C_TITLE
+		row.Size = UDim2.new(1,-8,0,54)
+		row.BackgroundColor3 = C_INPUT
+		row.BackgroundTransparency = 0.12
+		row.AutoButtonColor = false
 		row.BorderSizePixel=0
-		row.Text=other.DisplayName.."  ("..other.Name..")"
+		row.Text = ""
+		row.ClipsDescendants = true
 		row.TextColor3=C_LABEL
 		row.TextSize=12
 		row.Font=Enum.Font.GothamBold
@@ -1537,12 +2026,69 @@ local function buildSneakPanel()
 		row.Parent = ss2
 		Instance.new("UICorner",row).CornerRadius=UDim.new(0,10)
 
+		local avatar = Instance.new("ImageLabel")
+		avatar.Name = "PlayerAvatar"
+		avatar.Size = UDim2.fromOffset(38, 38)
+		avatar.Position = UDim2.new(0, 8, 0.5, -19)
+		avatar.BackgroundColor3 = C_OFF
+		avatar.BorderSizePixel = 0
+		avatar.ScaleType = Enum.ScaleType.Crop
+		avatar.ZIndex = row.ZIndex + 1
+		avatar.Parent = row
 
-		local rp=Instance.new("UIPadding"); rp.PaddingLeft=UDim.new(0,10); rp.Parent=row
+		Instance.new("UICorner", avatar).CornerRadius =
+			UDim.new(1, 0)
+
+		local avatarStroke = Instance.new("UIStroke")
+		avatarStroke.Color = C_ON
+		avatarStroke.Thickness = 1.5
+		avatarStroke.Transparency = 0.2
+		avatarStroke.Parent = avatar
+
+		task.spawn(function()
+			local success, image = pcall(function()
+				return Players:GetUserThumbnailAsync(
+					other.UserId,
+					Enum.ThumbnailType.HeadShot,
+					Enum.ThumbnailSize.Size150x150
+				)
+			end)
+
+			if success and avatar.Parent then
+				avatar.Image = image
+			end
+		end)
+
+		local displayName = Instance.new("TextLabel")
+		displayName.Size = UDim2.new(1, -64, 0, 20)
+		displayName.Position = UDim2.fromOffset(56, 9)
+		displayName.BackgroundTransparency = 1
+		displayName.Text = other.DisplayName
+		displayName.TextColor3 = C_LABEL
+		displayName.TextSize = 13
+		displayName.Font = Enum.Font.GothamBold
+		displayName.TextXAlignment = Enum.TextXAlignment.Left
+		displayName.TextTruncate = Enum.TextTruncate.AtEnd
+		displayName.ZIndex = row.ZIndex + 1
+		displayName.Parent = row
+
+		local username = Instance.new("TextLabel")
+		username.Size = UDim2.new(1, -64, 0, 16)
+		username.Position = UDim2.fromOffset(56, 28)
+		username.BackgroundTransparency = 1
+		username.Text = "@" .. other.Name
+		username.TextColor3 = C_DIM
+		username.TextSize = 10
+		username.Font = Enum.Font.GothamMedium
+		username.TextXAlignment = Enum.TextXAlignment.Left
+		username.TextTruncate = Enum.TextTruncate.AtEnd
+		username.ZIndex = row.ZIndex + 1
+		username.Parent = row
+		
 		row.MouseEnter:Connect(function() TweenService:Create(row,TW_ROW,{BackgroundColor3=C_HOVER}):Play() end)
 		row.MouseLeave:Connect(function()
 			TweenService:Create(row,TW_ROW,{
-				BackgroundColor3 = C_TITLE
+				BackgroundColor3 = C_INPUT
 			}):Play()
 		end)
 		row.MouseButton1Click:Connect(function()
