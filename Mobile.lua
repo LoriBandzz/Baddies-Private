@@ -671,6 +671,33 @@ local function addGradient(parent, rotation, colors)
 	return gradient
 end
 
+local function whiteButtonText(button)
+	local label = Instance.new("TextLabel")
+	label.Name = "ButtonText"
+	label.Size = UDim2.fromScale(1, 1)
+	label.BackgroundTransparency = 1
+	label.BorderSizePixel = 0
+	label.Text = button.Text
+	label.TextColor3 = Color3.fromRGB(255, 255, 255)
+	label.TextSize = button.TextSize
+	label.Font = button.Font
+	label.TextXAlignment = button.TextXAlignment
+	label.TextYAlignment = button.TextYAlignment
+	label.TextTransparency = 0
+	label.TextStrokeTransparency = 1
+	label.ZIndex = button.ZIndex + 1
+	label.Active = false
+	label.Parent = button
+
+	button.TextTransparency = 1
+
+	button:GetPropertyChangedSignal("Text"):Connect(function()
+		label.Text = button.Text
+	end)
+
+	return label
+end
+
 local TW_DOT=TweenInfo.new(0.3,Enum.EasingStyle.Exponential,Enum.EasingDirection.Out)
 local TW_ROW=TweenInfo.new(0.22,Enum.EasingStyle.Exponential,Enum.EasingDirection.Out)
 local TW_FAST=TweenInfo.new(0.15,Enum.EasingStyle.Sine,Enum.EasingDirection.Out)
@@ -821,7 +848,7 @@ local function buildMobileUI()
 	mT.Size = UDim2.new(1, -80, 1, 0)
 	mT.Position = UDim2.fromOffset(8, 0)
 	mT.BackgroundTransparency = 1
-	mT.Text = "♕  Landon's Hub"
+	mT.Text = "Landon's Hub"
 	mT.TextColor3 = Color3.new(1, 1, 1)
 	mT.TextSize = 23
 	mT.Font = Enum.Font.GothamBold
@@ -879,8 +906,8 @@ local function buildMobileUI()
 	sidebar.Name = "Sidebar"
 	sidebar.Size = UDim2.new(0,110,1,-52)
 	sidebar.Position = UDim2.fromOffset(6,48)
-	sidebar.BackgroundColor3 = Color3.new(101, 19, 55)
-	sidebar.BackgroundTransparency = 0.25
+	sidebar.BackgroundColor3 = Color3.fromRGB(101, 19, 55)
+	sidebar.BackgroundTransparency = 0.15
 
 	local sidebarStroke = Instance.new("UIStroke")
 	sidebarStroke.Color = Color3.new(1, 1, 1)
@@ -929,15 +956,19 @@ local function buildMobileUI()
 				tabStrokes[tabName].Transparency =
 					selected and 0.15 or 0.85
 			end
-			
-			button.TextColor3 = Color3.fromRGB(255, 255, 255)
-			button.TextTransparency = 0
-			button.TextStrokeTransparency = 1
-			
+
+			button.TextTransparency = 1
+
+			local label = button:FindFirstChild("ButtonText")
+
+			if label then
+				label.TextColor3 = Color3.fromRGB(255, 255, 255)
+				label.TextTransparency = 0
+			end
+
 			TweenService:Create(button, TW_FAST, {
 				BackgroundTransparency = selected and 0 or 0.85,
-				BackgroundColor3 = Color3.new(1, 1, 1),
-				TextColor3 = Color3.fromRGB(255, 255, 255)
+				BackgroundColor3 = Color3.new(1, 1, 1)
 			}):Play()
 		end
 	end
@@ -987,6 +1018,8 @@ local function buildMobileUI()
 		tabGradients[name] = gradient
 		tabStrokes[name] = stroke
 		tabButtons[name] = button
+
+		whiteButtonText(button)
 		
 		local page = Instance.new("ScrollingFrame")
 		page.Name = name.."Page"
@@ -1240,26 +1273,28 @@ local function buildMobileUI()
 
 	local function settingsButton(card, text)
 		local btn = Instance.new("TextButton")
-		btn.Size = UDim2.new(1,-16,0,24)
-		btn.Position = UDim2.fromOffset(8,24)
-		btn.BackgroundColor3 = Color3.new(1,1,1)
+		btn.Size = UDim2.new(1, -16, 0, 24)
+		btn.Position = UDim2.fromOffset(8, 24)
+		btn.BackgroundColor3 = Color3.new(1, 1, 1)
 		btn.BorderSizePixel = 0
 		btn.Text = text
-		btn.TextColor3 = Color3.new(1,1,1)
+		btn.TextColor3 = Color3.new(1, 1, 1)
 		btn.TextSize = 11
 		btn.Font = Enum.Font.GothamBold
 		btn.AutoButtonColor = false
 		btn.Parent = card
 
-		Instance.new("UICorner",btn).CornerRadius =
-			UDim.new(0,6)
+		Instance.new("UICorner", btn).CornerRadius =
+			UDim.new(0, 6)
 
-		addGradient(btn,90,{
+		addGradient(btn, 90, {
 			ColorSequenceKeypoint.new(0,
-				Color3.fromRGB(240,105,169)),
+				Color3.fromRGB(192, 45, 112)),
 			ColorSequenceKeypoint.new(1,
-				Color3.fromRGB(153,28,87))
+				Color3.fromRGB(153, 28, 87))
 		})
+
+		whiteButtonText(btn)
 
 		return btn
 	end
