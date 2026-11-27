@@ -734,8 +734,7 @@ local function buildMobileUI()
 	local settings = {
 		Scale = 1,
 		Transparency = 0,
-		Theme = "Rose",
-		Animations = true
+		Theme = "Rose"
 	}
 
 	local defaultStarPosition = ToggleButton.Position
@@ -880,8 +879,8 @@ local function buildMobileUI()
 	sidebar.Name = "Sidebar"
 	sidebar.Size = UDim2.new(0,110,1,-52)
 	sidebar.Position = UDim2.fromOffset(6,48)
-	sidebar.BackgroundColor3 = Color3.new(1, 1, 1)
-	sidebar.BackgroundTransparency = 0.78
+	sidebar.BackgroundColor3 = Color3.new(101, 19, 55)
+	sidebar.BackgroundTransparency = 0.25
 
 	local sidebarStroke = Instance.new("UIStroke")
 	sidebarStroke.Color = Color3.new(1, 1, 1)
@@ -930,11 +929,15 @@ local function buildMobileUI()
 				tabStrokes[tabName].Transparency =
 					selected and 0.15 or 0.85
 			end
-
+			
+			button.TextColor3 = Color3.fromRGB(255, 255, 255)
+			button.TextTransparency = 0
+			button.TextStrokeTransparency = 1
+			
 			TweenService:Create(button, TW_FAST, {
 				BackgroundTransparency = selected and 0 or 0.85,
 				BackgroundColor3 = Color3.new(1, 1, 1),
-				TextColor3 = Color3.new(1, 1, 1)
+				TextColor3 = Color3.fromRGB(255, 255, 255)
 			}):Play()
 		end
 	end
@@ -1211,18 +1214,120 @@ local function buildMobileUI()
 		end
 	)
 	
-	for _, name in ipairs(tabNames) do
-		local row = createRow(pages[name], 42)
+	local themes = {
+		Rose = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(101,19,55)),
+			ColorSequenceKeypoint.new(0.35, Color3.fromRGB(166,43,96)),
+			ColorSequenceKeypoint.new(0.70, Color3.fromRGB(237,131,178)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(255,255,255))
+		}),
 
-		local label = Instance.new("TextLabel")
-		label.Size = UDim2.fromScale(1,1)
-		label.BackgroundTransparency = 1
-		label.Text = name .. " Settings"
-		label.TextColor3 = C_LABEL
-		label.Font = Enum.Font.GothamBold
-		label.TextSize = 13
-		label.Parent = row
+		Light = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(190,75,130)),
+			ColorSequenceKeypoint.new(0.5, Color3.fromRGB(248,195,220)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(255,255,255))
+		}),
+
+		Dark = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(45,12,29)),
+			ColorSequenceKeypoint.new(0.5, Color3.fromRGB(101,19,55)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(166,43,96))
+		})
+	}
+
+	local themeNames = {"Rose", "Light", "Dark"}
+	local themeIndex = 1
+
+	local function settingsButton(card, text)
+		local btn = Instance.new("TextButton")
+		btn.Size = UDim2.new(1,-16,0,24)
+		btn.Position = UDim2.fromOffset(8,24)
+		btn.BackgroundColor3 = Color3.new(1,1,1)
+		btn.BorderSizePixel = 0
+		btn.Text = text
+		btn.TextColor3 = Color3.new(1,1,1)
+		btn.TextSize = 11
+		btn.Font = Enum.Font.GothamBold
+		btn.AutoButtonColor = false
+		btn.Parent = card
+
+		Instance.new("UICorner",btn).CornerRadius =
+			UDim.new(0,6)
+
+		addGradient(btn,90,{
+			ColorSequenceKeypoint.new(0,
+				Color3.fromRGB(240,105,169)),
+			ColorSequenceKeypoint.new(1,
+				Color3.fromRGB(153,28,87))
+		})
+
+		return btn
 	end
+
+	local themeCard = settingsCard("Interface Theme")
+	local themeButton = settingsButton(themeCard,"Rose")
+
+	local function applyTheme(name)
+		settings.Theme = name
+
+		local gradient = mP:FindFirstChildOfClass("UIGradient")
+
+		if gradient and themes[name] then
+			gradient.Color = themes[name]
+		end
+
+		themeButton.Text = name
+	end
+
+	themeButton.Activated:Connect(function()
+		themeIndex = themeIndex % #themeNames + 1
+		applyTheme(themeNames[themeIndex])
+	end)
+	
+	local positionCard = settingsCard("Reset Position")
+	local positionButton = settingsButton(positionCard,"Reset")
+
+	positionButton.Activated:Connect(function()
+		mP.Position = defaultPanelPosition
+		ToggleButton.Position = defaultStarPosition
+	end)
+
+	local resetCard = settingsCard("Reset Settings")
+	local resetButton = settingsButton(resetCard,"Restore Defaults")
+
+	resetButton.Activated:Connect(function()
+		setScale(1)
+		setTransparency(0)
+
+		themeIndex = 1
+		applyTheme("Rose")
+
+		mP.Position = defaultPanelPosition
+		ToggleButton.Position = defaultStarPosition
+	end)
+	
+	local discordCard = settingsCard("Discord Community")
+	local discordButton = settingsButton(discordCard,"Copy Invite")
+
+	discordButton.Activated:Connect(function()
+		if setclipboard then
+			local success = pcall(
+				setclipboard,
+				"https://discord.gg/bandzz"
+			)
+
+			discordButton.Text =
+				success and "Copied!" or "Copy Failed"
+		else
+			discordButton.Text = "Unavailable"
+		end
+
+		task.delay(2,function()
+			if discordButton.Parent then
+				discordButton.Text = "Copy Invite"
+			end
+		end)
+	end)
 	
 	local mOrder=0
 	local function mToggle(parent, feat)
@@ -1275,9 +1380,6 @@ local function buildMobileUI()
 		onDeactivate = function() end
 	})
 
-	mInput(settingsPage, "Display name", "Save", C_ON, function(v)
-		print(v)
-	end)
 
 	mOrder=mOrder+1
 	local mSneak=Instance.new("TextButton"); mSneak.Size=UDim2.new(1,-8,0,52)
