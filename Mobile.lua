@@ -651,17 +651,25 @@ local GUI_W = 450
 local ROW_H = 38
 local PAD = 8
 
-local C_BG = Color3.fromRGB(255,255,255)
-local C_TITLE = Color3.fromRGB(252,235,243)
-local C_ON = Color3.fromRGB(232,139,181)
-local C_OFF = Color3.fromRGB(225,219,223)
-local C_KEY = Color3.fromRGB(190,110,150)
-local C_KEY_HLD = Color3.fromRGB(245,180,210)
-local C_LABEL = Color3.fromRGB(78,54,66)
-local C_DIM = Color3.fromRGB(157,128,143)
-local C_HOVER = Color3.fromRGB(249,222,235)
-local C_INPUT = Color3.fromRGB(255,245,250)
-local C_SEP = Color3.fromRGB(237,197,217)
+local C_BG = Color3.fromRGB(255, 255, 255)
+local C_TITLE = Color3.fromRGB(101, 19, 55)
+local C_ON = Color3.fromRGB(192, 45, 112)
+local C_OFF = Color3.fromRGB(235, 207, 222)
+local C_KEY = Color3.fromRGB(166, 43, 96)
+local C_KEY_HLD = Color3.fromRGB(245, 180, 210)
+local C_LABEL = Color3.fromRGB(65, 19, 40)
+local C_DIM = Color3.fromRGB(130, 79, 103)
+local C_HOVER = Color3.fromRGB(249, 222, 235)
+local C_INPUT = Color3.fromRGB(255, 245, 250)
+local C_SEP = Color3.fromRGB(255, 205, 230)
+
+local function addGradient(parent, rotation, colors)
+	local gradient = Instance.new("UIGradient")
+	gradient.Rotation = rotation
+	gradient.Color = ColorSequence.new(colors)
+	gradient.Parent = parent
+	return gradient
+end
 
 local TW_DOT=TweenInfo.new(0.3,Enum.EasingStyle.Exponential,Enum.EasingDirection.Out)
 local TW_ROW=TweenInfo.new(0.22,Enum.EasingStyle.Exponential,Enum.EasingDirection.Out)
@@ -710,9 +718,29 @@ local function buildMobileUI()
 	mP.Active=true
 	mP.Parent=mSg
 	
+	mP.BackgroundColor3 = Color3.new(1, 1, 1)
+
+	addGradient(mP, 115, {
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(101, 19, 55)),
+		ColorSequenceKeypoint.new(0.25, Color3.fromRGB(166, 43, 96)),
+		ColorSequenceKeypoint.new(0.55, Color3.fromRGB(237, 131, 178)),
+		ColorSequenceKeypoint.new(0.80, Color3.fromRGB(251, 213, 231)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+	})
+	
 	local uiScale = Instance.new("UIScale")
 	uiScale.Parent = mP
+	
+	local settings = {
+		Scale = 1,
+		Transparency = 0,
+		Theme = "Rose",
+		Animations = true
+	}
 
+	local defaultStarPosition = ToggleButton.Position
+	local defaultPanelPosition = mP.Position
+	
 	local function updateScale()
 		local camera = workspace.CurrentCamera
 		if not camera then return end
@@ -720,7 +748,7 @@ local function buildMobileUI()
 		local viewport = camera.ViewportSize
 
 		uiScale.Scale = math.min(
-			1,
+			settings.Scale,
 			(viewport.X - 30) / 450,
 			(viewport.Y - 30) / 280
 		)
@@ -770,16 +798,59 @@ local function buildMobileUI()
 	end)
 
 	Instance.new("UICorner",mP).CornerRadius=UDim.new(0,14)
-	Instance.new("UIStroke",mP).Color=C_SEP
+	local panelStroke = Instance.new("UIStroke")
+	panelStroke.Color = Color3.fromRGB(255, 174, 216)
+	panelStroke.Thickness = 2
+	panelStroke.Parent = mP
 
-	local mH=Instance.new("Frame"); mH.Size=UDim2.new(1,0,0,44); mH.BackgroundColor3=C_TITLE
-	mH.BorderSizePixel=0; mH.Parent=mP; Instance.new("UICorner",mH).CornerRadius=UDim.new(0,14)
-	local mHF=Instance.new("Frame"); mHF.Size=UDim2.new(1,0,0,14); mHF.Position=UDim2.new(0,0,1,-14)
-	mHF.BackgroundColor3=C_TITLE; mHF.BorderSizePixel=0; mHF.Parent=mH
-	local mT=Instance.new("TextLabel"); mT.Size=UDim2.new(1,-60,1,0); mT.Position=UDim2.new(0,10,0,0)
-	mT.BackgroundTransparency=1; mT.Text="Landon's Hub"; mT.TextColor3=C_LABEL; mT.TextSize=16
-	mT.Font=Enum.Font.GothamBold; mT.TextXAlignment=Enum.TextXAlignment.Left; mT.Parent=mH
-	mT.Size=UDim2.new(1,-20,1,0)
+	addGradient(panelStroke, 90, {
+		ColorSequenceKeypoint.new(0,
+			Color3.fromRGB(255, 120, 190)),
+		ColorSequenceKeypoint.new(0.5,
+			Color3.fromRGB(255, 205, 230)),
+		ColorSequenceKeypoint.new(1,
+			Color3.fromRGB(255, 255, 255))
+	})
+	
+	local mH = Instance.new("Frame")
+	mH.Size = UDim2.new(1, -16, 0, 44)
+	mH.Position = UDim2.fromOffset(8, 6)
+	mH.BackgroundTransparency = 1
+	mH.Parent = mP
+
+	local mT = Instance.new("TextLabel")
+	mT.Size = UDim2.new(1, -80, 1, 0)
+	mT.Position = UDim2.fromOffset(8, 0)
+	mT.BackgroundTransparency = 1
+	mT.Text = "♕  Landon's Hub"
+	mT.TextColor3 = Color3.new(1, 1, 1)
+	mT.TextSize = 23
+	mT.Font = Enum.Font.GothamBold
+	mT.TextXAlignment = Enum.TextXAlignment.Left
+	mT.Parent = mH
+
+	local close = Instance.new("TextButton")
+	close.Size = UDim2.fromOffset(28, 26)
+	close.Position = UDim2.new(1, -34, 0.5, -13)
+	close.BackgroundColor3 = Color3.new(1, 1, 1)
+	close.BackgroundTransparency = 0.85
+	close.Text = "×"
+	close.TextSize = 22
+	close.TextColor3 = Color3.new(1, 1, 1)
+	close.Font = Enum.Font.GothamBold
+	close.Parent = mH
+
+	Instance.new("UICorner", close).CornerRadius =
+		UDim.new(0, 8)
+
+	local closeStroke = Instance.new("UIStroke")
+	closeStroke.Color = Color3.new(1, 1, 1)
+	closeStroke.Transparency = 0.5
+	closeStroke.Parent = close
+
+	close.Activated:Connect(function()
+		mP.Visible = false
+	end)
 
 	local tabNames = {
 		"Combat",
@@ -789,7 +860,18 @@ local function buildMobileUI()
 		"Utility",
 		"Settings"
 	}
+	
+	local tabIcons = {
+		Combat = "⚔",
+		Defense = "◇",
+		Hitbox = "⊕",
+		Misc = "▱",
+		Utility = "▦",
+		Settings = "⚙"
+	}
 
+	local tabGradients = {}
+	local tabStrokes = {}
 	local pages = {}
 	local tabButtons = {}
 	local activeTab = "Combat"
@@ -798,7 +880,14 @@ local function buildMobileUI()
 	sidebar.Name = "Sidebar"
 	sidebar.Size = UDim2.new(0,110,1,-52)
 	sidebar.Position = UDim2.fromOffset(6,48)
-	sidebar.BackgroundColor3 = C_INPUT
+	sidebar.BackgroundColor3 = Color3.new(1, 1, 1)
+	sidebar.BackgroundTransparency = 0.78
+
+	local sidebarStroke = Instance.new("UIStroke")
+	sidebarStroke.Color = Color3.new(1, 1, 1)
+	sidebarStroke.Transparency = 0.35
+	sidebarStroke.Thickness = 1
+	sidebarStroke.Parent = sidebar
 	sidebar.BorderSizePixel = 0
 	sidebar.Parent = mP
 
@@ -826,20 +915,26 @@ local function buildMobileUI()
 	local function selectTab(name)
 		activeTab = name
 
-		for tabName,page in pairs(pages) do
+		for tabName, page in pairs(pages) do
 			page.Visible = tabName == name
 		end
 
-		for tabName,button in pairs(tabButtons) do
+		for tabName, button in pairs(tabButtons) do
 			local selected = tabName == name
 
-			TweenService:Create(button,TW_FAST,{
-				BackgroundColor3 =
-					selected and C_ON or C_INPUT,
+			if tabGradients[tabName] then
+				tabGradients[tabName].Enabled = selected
+			end
 
-				TextColor3 =
-					selected and Color3.new(1,1,1)
-					or C_LABEL
+			if tabStrokes[tabName] then
+				tabStrokes[tabName].Transparency =
+					selected and 0.15 or 0.85
+			end
+
+			TweenService:Create(button, TW_FAST, {
+				BackgroundTransparency = selected and 0 or 0.85,
+				BackgroundColor3 = Color3.new(1, 1, 1),
+				TextColor3 = Color3.new(1, 1, 1)
 			}):Play()
 		end
 	end
@@ -847,23 +942,49 @@ local function buildMobileUI()
 	for index,name in ipairs(tabNames) do
 
 		local button = Instance.new("TextButton")
-		button.Name = name.."Tab"
-		button.Size = UDim2.new(1,0,0,28)
-		button.BackgroundColor3 = C_INPUT
+		button.Name = name .. "Tab"
+		button.Size = UDim2.new(1, 0, 0, 28)
+		button.BackgroundColor3 = Color3.new(1, 1, 1)
+		button.BackgroundTransparency = 0.85
 		button.BorderSizePixel = 0
-		button.Text = name
-		button.TextColor3 = C_LABEL
+		button.Text = tabIcons[name] .. "   " .. name
+		button.TextColor3 = Color3.new(1, 1, 1)
 		button.TextSize = 12
 		button.Font = Enum.Font.GothamBold
+		button.TextXAlignment = Enum.TextXAlignment.Left
 		button.AutoButtonColor = false
 		button.LayoutOrder = index
 		button.Parent = sidebar
 
-		Instance.new("UICorner",button).CornerRadius =
-			UDim.new(0,8)
+		Instance.new("UICorner", button).CornerRadius =
+			UDim.new(0, 8)
 
+		local padding = Instance.new("UIPadding")
+		padding.PaddingLeft = UDim.new(0, 9)
+		padding.Parent = button
+
+		local stroke = Instance.new("UIStroke")
+		stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+		stroke.Color = Color3.fromRGB(255, 205, 230)
+		stroke.Transparency = 0.85
+		stroke.Thickness = 1
+		stroke.Parent = button
+
+		local gradient = addGradient(button, 90, {
+			ColorSequenceKeypoint.new(0,
+				Color3.fromRGB(255, 113, 183)),
+			ColorSequenceKeypoint.new(0.5,
+				Color3.fromRGB(218, 65, 137)),
+			ColorSequenceKeypoint.new(1,
+				Color3.fromRGB(153, 28, 87))
+		})
+
+		gradient.Enabled = false
+
+		tabGradients[name] = gradient
+		tabStrokes[name] = stroke
 		tabButtons[name] = button
-
+		
 		local page = Instance.new("ScrollingFrame")
 		page.Name = name.."Page"
 		page.Size = UDim2.fromScale(1,1)
@@ -900,13 +1021,29 @@ local function buildMobileUI()
 	
 	local function createRow(parent, height)
 		local row = Instance.new("Frame")
-		row.Size = UDim2.new(1,-8,0,height or 42)
-		row.BackgroundColor3 = C_TITLE
+		row.Size = UDim2.new(1, -8, 0, height or 42)
+		row.BackgroundColor3 = Color3.new(1, 1, 1)
+		row.BackgroundTransparency = 0.18
 		row.BorderSizePixel = 0
 		row.Parent = parent
 
-		Instance.new("UICorner",row).CornerRadius =
-			UDim.new(0,10)
+		Instance.new("UICorner", row).CornerRadius =
+			UDim.new(0, 10)
+
+		local stroke = Instance.new("UIStroke")
+		stroke.Color = Color3.new(1, 1, 1)
+		stroke.Transparency = 0.25
+		stroke.Thickness = 1
+		stroke.Parent = row
+
+		addGradient(row, 35, {
+			ColorSequenceKeypoint.new(0,
+				Color3.fromRGB(255, 255, 255)),
+			ColorSequenceKeypoint.new(0.5,
+				Color3.fromRGB(255, 237, 247)),
+			ColorSequenceKeypoint.new(1,
+				Color3.fromRGB(248, 205, 226))
+		})
 
 		return row
 	end
@@ -918,31 +1055,161 @@ local function buildMobileUI()
 	local utilityPage = pages["Utility"]
 	local settingsPage = pages["Settings"]
 	
-	local testRow = createRow(settingsPage, 42)
+	local settingsHeader = createRow(settingsPage, 38)
 
-	local testLabel = Instance.new("TextLabel")
-	testLabel.Size = UDim2.fromScale(1,1)
-	testLabel.BackgroundTransparency = 1
-	testLabel.Text = "Interface Settings"
-	testLabel.TextColor3 = C_LABEL
-	testLabel.Font = Enum.Font.GothamBold
-	testLabel.TextSize = 13
-	testLabel.Parent = testRow
+	local heading = Instance.new("TextLabel")
+	heading.Size = UDim2.new(1, -20, 1, 0)
+	heading.Position = UDim2.fromOffset(10, 0)
+	heading.BackgroundTransparency = 1
+	heading.Text = "⚙  Interface Settings"
+	heading.TextColor3 = C_LABEL
+	heading.TextSize = 15
+	heading.Font = Enum.Font.GothamBold
+	heading.TextXAlignment = Enum.TextXAlignment.Left
+	heading.Parent = settingsHeader
+
+	local settingsGrid = Instance.new("Frame")
+	settingsGrid.Size = UDim2.new(1, -8, 0, 174)
+	settingsGrid.BackgroundTransparency = 1
+	settingsGrid.Parent = settingsPage
+
+	local gridLayout = Instance.new("UIGridLayout")
+	gridLayout.CellSize = UDim2.new(0.5, -4, 0, 54)
+	gridLayout.CellPadding = UDim2.fromOffset(8, 6)
+	gridLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	gridLayout.Parent = settingsGrid
+
+	local function settingsCard(title)
+		local card = createRow(settingsGrid, 54)
+
+		local label = Instance.new("TextLabel")
+		label.Size = UDim2.new(1, -16, 0, 22)
+		label.Position = UDim2.fromOffset(8, 2)
+		label.BackgroundTransparency = 1
+		label.Text = title
+		label.TextColor3 = C_LABEL
+		label.TextSize = 11
+		label.Font = Enum.Font.GothamBold
+		label.TextXAlignment = Enum.TextXAlignment.Left
+		label.Parent = card
+
+		return card
+	end
 	
-	local discord = Instance.new("TextBox")
-	discord.Size = UDim2.new(1,-8,0,44)
-	discord.BackgroundColor3 = C_TITLE
-	discord.BorderSizePixel = 0
-	discord.Text = "https://discord.gg/bandzz"
-	discord.TextColor3 = C_LABEL
-	discord.TextSize = 13
-	discord.Font = Enum.Font.GothamBold
-	discord.ClearTextOnFocus = false
-	discord.TextEditable = false
-	discord.Parent = settingsPage
+	local function createSlider(title, minimum, maximum, default, callback)
+		local card = settingsCard(title)
 
-	Instance.new("UICorner",discord).CornerRadius =
-		UDim.new(0,10)
+		local track = Instance.new("TextButton")
+		track.Size = UDim2.new(1, -20, 0, 8)
+		track.Position = UDim2.fromOffset(10, 34)
+		track.BackgroundColor3 = C_OFF
+		track.Text = ""
+		track.AutoButtonColor = false
+		track.Parent = card
+
+		Instance.new("UICorner", track).CornerRadius =
+			UDim.new(1, 0)
+
+		local fill = Instance.new("Frame")
+		fill.BackgroundColor3 = C_ON
+		fill.BorderSizePixel = 0
+		fill.Parent = track
+
+		Instance.new("UICorner", fill).CornerRadius =
+			UDim.new(1, 0)
+
+		local knob = Instance.new("Frame")
+		knob.Size = UDim2.fromOffset(12, 12)
+		knob.AnchorPoint = Vector2.new(0.5, 0.5)
+		knob.BackgroundColor3 = Color3.new(1, 1, 1)
+		knob.BorderSizePixel = 0
+		knob.Parent = track
+
+		Instance.new("UICorner", knob).CornerRadius =
+			UDim.new(1, 0)
+
+		Instance.new("UIStroke", knob).Color = C_ON
+
+		local valueLabel = Instance.new("TextLabel")
+		valueLabel.Size = UDim2.fromOffset(42, 18)
+		valueLabel.Position = UDim2.new(1, -46, 0, 3)
+		valueLabel.BackgroundTransparency = 1
+		valueLabel.TextColor3 = C_KEY
+		valueLabel.TextSize = 10
+		valueLabel.Font = Enum.Font.GothamBold
+		valueLabel.Parent = card
+
+		local function setValue(value)
+			value = math.clamp(value, minimum, maximum)
+
+			local percent =
+				(value - minimum) / (maximum - minimum)
+
+			fill.Size = UDim2.fromScale(percent, 1)
+			knob.Position = UDim2.fromScale(percent, 0.5)
+
+			valueLabel.Text =
+				tostring(math.floor(value * 100 + 0.5)) .. "%"
+
+			callback(value)
+		end
+
+		local activeInput
+
+		local function update(input)
+			local percent = math.clamp(
+				(input.Position.X - track.AbsolutePosition.X)
+					/ math.max(track.AbsoluteSize.X, 1),
+				0, 1
+			)
+
+			setValue(minimum + (maximum - minimum) * percent)
+		end
+
+		track.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.Touch
+				or input.UserInputType == Enum.UserInputType.MouseButton1 then
+				activeInput = input
+				update(input)
+			end
+		end)
+
+		UIS.InputChanged:Connect(function(input)
+			if not activeInput then return end
+
+			if input == activeInput or (
+				activeInput.UserInputType == Enum.UserInputType.MouseButton1
+					and input.UserInputType == Enum.UserInputType.MouseMovement
+				) then
+				update(input)
+			end
+		end)
+
+		UIS.InputEnded:Connect(function(input)
+			if input == activeInput then
+				activeInput = nil
+			end
+		end)
+
+		setValue(default)
+		return setValue
+	end
+
+	local setScale = createSlider(
+		"UI Scale", 0.65, 1.15, 1,
+		function(value)
+			settings.Scale = value
+			updateScale()
+		end
+	)
+
+	local setTransparency = createSlider(
+		"Transparency", 0, 0.65, 0,
+		function(value)
+			settings.Transparency = value
+			mP.BackgroundTransparency = value
+		end
+	)
 	
 	for _, name in ipairs(tabNames) do
 		local row = createRow(pages[name], 42)
