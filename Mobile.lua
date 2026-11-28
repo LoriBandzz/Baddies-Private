@@ -1861,7 +1861,10 @@ local function buildMobileUI()
 
 	addControl(combatPage, fCombo)
 	addControl(combatPage, fStomp)
-
+	addControl(combatPage, fBrass)
+	addControl(combatPage, fPvp)
+	addControl(combatPage, fPvpOn)
+	
 	-- Defense
 	createCategory(defensePage, "Defense Features", 0)
 
@@ -1872,7 +1875,16 @@ local function buildMobileUI()
 	addControl(defensePage, fDuo)
 	
 	createCategory(utilityPage, "Information", 1)
-
+	
+	-- others
+	createCategory(hitboxPage, "Hitbox Features", 0)
+	addControl(hitboxPage, fHitbx)
+	addControl(hitboxPage, fValue)
+	
+	createCategory(miscPage, "Miscellaneous Features", 0)
+	addControl(miscPage, fHeal)
+	addControl(miscPage, fGod)
+	
 	createInfoCard(
 		utilityPage,
 		"Landon's Hub",
