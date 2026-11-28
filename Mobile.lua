@@ -1846,6 +1846,17 @@ local function buildMobileUI()
 		return box
 	end
 	
+	mToggle(combatPage, {
+		name = "Preview Toggle",
+		state = false,
+		onActivate = function()
+			print("Enabled")
+		end,
+		onDeactivate = function()
+			print("Disabled")
+		end
+	})
+	
 	createCategory(utilityPage, "Information", 1)
 
 	createInfoCard(
