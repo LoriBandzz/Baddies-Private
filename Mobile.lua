@@ -1846,33 +1846,30 @@ local function buildMobileUI()
 		return box
 	end
 	
-	local function addControl(parent, name)
-		mToggle(parent, {
-			name = name,
-			state = false,
-			onActivate = function()
-				print(name .. " enabled")
-			end,
-			onDeactivate = function()
-				print(name .. " disabled")
-			end
-		})
+	local function addControl(parent, feature)
+		assert(type(feature) == "table", "Expected feature table")
+		assert(type(feature.name) == "string", "Missing feature name")
+		assert(type(feature.state) == "boolean", "Invalid feature state")
+		assert(type(feature.onActivate) == "function", "Missing activation callback")
+		assert(type(feature.onDeactivate) == "function", "Missing deactivation callback")
+
+		mToggle(parent, feature)
 	end
 
 	-- Combat
 	createCategory(combatPage, "Combat Features", 0)
 
-	addControl(combatPage, "Combo Spam")
-	addControl(combatPage, "Auto Stomp")
+	addControl(combatPage, fCombo)
+	addControl(combatPage, fStomp)
 
 	-- Defense
 	createCategory(defensePage, "Defense Features", 0)
 
-	addControl(defensePage, "Auto Block")
-	addControl(defensePage, "Auto Escape")
-	addControl(defensePage, "Block LooseFight")
-	addControl(defensePage, "Block BeatDown")
-	addControl(defensePage, "Block Duo Events")
+	addControl(defensePage, fBlock)
+	addControl(defensePage, fEscape)
+	addControl(defensePage, fLoose)
+	addControl(defensePage, fBeatDn)
+	addControl(defensePage, fDuo)
 	
 	createCategory(utilityPage, "Information", 1)
 
