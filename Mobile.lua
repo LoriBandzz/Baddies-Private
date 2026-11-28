@@ -876,7 +876,12 @@ local function buildMobileUI()
 
 	UIS.InputChanged:Connect(function(input)
 		if not dragging then return end
+		if not activeInput then return end
 
+		if activeInput.UserInputType == Enum.UserInputType.Touch
+			and input ~= activeInput then
+			return
+		end
 		if input.UserInputType ~= Enum.UserInputType.Touch
 			and input.UserInputType ~= Enum.UserInputType.MouseMovement then
 			return
@@ -940,6 +945,12 @@ local function buildMobileUI()
 	mT.TextSize = 22
 	mT.TextColor3 = Color3.new(1, 1, 1)
 	mT.Font = Enum.Font.GothamBold
+	mT.BackgroundTransparency = 1
+	mT.TextXAlignment = Enum.TextXAlignment.Left
+	mT.BorderSizePixel = 0
+	mT.Parent = mH
+
+	mH.Active = true
 
 	local panelDragging = false
 	local panelDragStart
@@ -1076,7 +1087,8 @@ local function buildMobileUI()
 	local sidebar = Instance.new("Frame")
 	sidebar.Name = "Sidebar"
 	sidebar.Size = UDim2.new(0,110,1,-52)
-	sidebar.Position = UDim2.fromOffset(6,48)
+	sidebar.Position = UDim2.fromOffset(6,56)
+	sidebar.Size = UDim2.new(0,110,1,-62)
 	sidebar.BackgroundColor3 = Color3.fromRGB(101, 19, 55)
 	sidebar.BackgroundTransparency = 0.15
 
@@ -1092,12 +1104,13 @@ local function buildMobileUI()
 		UDim.new(0,10)
 
 	local sidebarLayout = Instance.new("UIListLayout")
-	sidebarLayout.Padding = UDim.new(0,4)
 	sidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	sidebarLayout.Parent = sidebar
 
 	local sidebarPadding = Instance.new("UIPadding")
 	sidebarLayout.Padding = UDim.new(0, 5)
+	sidebarPadding.PaddingTop = UDim.new(0, 6)
+	sidebarPadding.PaddingBottom = UDim.new(0, 6)
 	sidebarPadding.PaddingLeft = UDim.new(0,6)
 	sidebarPadding.PaddingRight = UDim.new(0,6)
 	sidebarPadding.Parent = sidebar
@@ -1105,7 +1118,8 @@ local function buildMobileUI()
 	local content = Instance.new("Frame")
 	content.Name = "Content"
 	content.Size = UDim2.new(1,-130,1,-56)
-	content.Position = UDim2.fromOffset(124,50)
+	content.Position = UDim2.fromOffset(124,56)
+	content.Size = UDim2.new(1,-130,1,-62)
 	content.BackgroundTransparency = 1
 	content.Parent = mP
 
@@ -1332,6 +1346,7 @@ local function buildMobileUI()
 		"General tools and preferences")
 	
 	local settingsHeader = createRow(settingsPage, 38)
+	settingsHeader.LayoutOrder = -100
 
 	local heading = Instance.new("TextLabel")
 	heading.Size = UDim2.new(1, -20, 1, 0)
@@ -1348,16 +1363,20 @@ local function buildMobileUI()
 	settingsGrid.Size = UDim2.new(1, -8, 0, 174)
 	settingsGrid.BackgroundTransparency = 1
 	settingsGrid.Parent = settingsPage
-
+	settingsGrid.LayoutOrder = 1
+	
 	local gridLayout = Instance.new("UIGridLayout")
 	gridLayout.CellSize = UDim2.new(0.5, -4, 0, 54)
 	gridLayout.CellPadding = UDim2.fromOffset(8, 6)
 	gridLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	gridLayout.Parent = settingsGrid
-
+	
+	local settingsOrder = 0
 	local function settingsCard(title)
 		local card = createRow(settingsGrid, 54)
-
+		settingsOrder = settingsOrder + 1
+		card.LayoutOrder = settingsOrder
+		
 		local label = Instance.new("TextLabel")
 		label.Size = UDim2.new(1, -16, 0, 22)
 		label.Position = UDim2.fromOffset(8, 2)
@@ -1368,13 +1387,21 @@ local function buildMobileUI()
 		label.Font = Enum.Font.GothamBold
 		label.TextXAlignment = Enum.TextXAlignment.Left
 		label.Parent = card
-
+		
+		label.Name = "CardTitle"
 		return card
 	end
 	
 	local function createSlider(title, minimum, maximum, default, callback)
 		local card = settingsCard(title)
+		
+		local cardTitle = card:FindFirstChild("CardTitle")
 
+		if cardTitle then
+			cardTitle.Size = UDim2.new(1, -58, 0, 22)
+			cardTitle.TextTruncate = Enum.TextTruncate.AtEnd
+		end
+		
 		local track = Instance.new("TextButton")
 		track.Size = UDim2.new(1, -20, 0, 8)
 		track.Position = UDim2.fromOffset(10, 34)
@@ -1553,7 +1580,9 @@ local function buildMobileUI()
 
 		themeButton.Text = name
 	end
-
+	
+	applyTheme("Rose")
+	
 	themeButton.Activated:Connect(function()
 		themeIndex = themeIndex % #themeNames + 1
 		applyTheme(themeNames[themeIndex])
@@ -1610,7 +1639,9 @@ local function buildMobileUI()
 		category.Size = UDim2.new(1, -8, 0, 22)
 		category.BackgroundTransparency = 1
 		category.Text = string.upper(title)
-		category.TextColor3 = C_TITLE
+		category.TextColor3 = Color3.fromRGB(255, 255, 255)
+		category.TextStrokeColor3 = C_TITLE
+		category.TextStrokeTransparency = 0.3
 		category.TextSize = 10
 		category.Font = Enum.Font.GothamBold
 		category.TextXAlignment = Enum.TextXAlignment.Left
@@ -1717,7 +1748,7 @@ local function buildMobileUI()
 
 			toggle.BackgroundColor3 = feat.state
 				and Color3.new(1, 1, 1)
-				or Color3.fromRGB(165, 130, 148)
+				or Color3.fromRGB(116, 83, 101)
 
 			knob.Position = feat.state
 				and UDim2.fromOffset(39, 3)
@@ -1856,11 +1887,24 @@ local function buildMobileUI()
 
 	whiteButtonText(mSneak)
 	
-	mSneak.MouseButton1Click:Connect(function()
-		local g=playerGui:FindFirstChild("LANDONS_SNEAK"); if not g then return end
-		g.Enabled=not g.Enabled
-		mSneak.Text=not g.Enabled and "🕵 Sneak Tool ▸ Open" or "🕵 Sneak Tool ▸ Close"
-	end)
+	local sneakGui = playerGui:FindFirstChild("LANDONS_SNEAK")
+
+	if sneakGui then
+		local function updateSneakButton()
+			mSneak.Text = sneakGui.Enabled
+				and "🕵 Sneak Tool ▸ Close"
+				or "🕵 Sneak Tool ▸ Open"
+		end
+
+		mSneak.Activated:Connect(function()
+			sneakGui.Enabled = not sneakGui.Enabled
+		end)
+
+		sneakGui:GetPropertyChangedSignal("Enabled")
+			:Connect(updateSneakButton)
+
+		updateSneakButton()
+	end
 end
 
 local function buildSneakPanel()
@@ -1897,7 +1941,9 @@ local function buildSneakPanel()
 
 	local sb=Instance.new("Frame")
 	sb.Size=UDim2.new(1,0,0,44)
-	sb.BackgroundTransparency = 1
+	sb.BackgroundColor3 = Color3.fromRGB(65, 12, 36)
+	sb.BackgroundTransparency = 0.25
+	sb.Active = true
 	sb.BorderSizePixel=0
 	sb.Parent=sp
 	Instance.new("UICorner",sb).CornerRadius=UDim.new(0,14)
@@ -1912,7 +1958,6 @@ local function buildSneakPanel()
 	local stl2=Instance.new("TextLabel")
 	stl2.Size = UDim2.new(1, -50, 0, 24)
 	stl2.Position = UDim2.fromOffset(12, 3)
-	stl2.Position=UDim2.new(0,12,0,0)
 	stl2.BackgroundTransparency=1
 	stl2.Text = "Sneak Tool"
 	stl2.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -1990,6 +2035,7 @@ local function buildSneakPanel()
 	ss2.ScrollBarImageTransparency = 0.2
 	ss2.ScrollBarImageColor3 = C_KEY
 	ss2.CanvasSize=UDim2.new(0,0,0,0)
+	ss2.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	ss2.Parent=sp
 	ss2.ZIndex = 4
 	ss2.ScrollingDirection = Enum.ScrollingDirection.Y
@@ -2118,9 +2164,6 @@ local function buildSneakPanel()
 	for _,other in ipairs(Players:GetPlayers()) do if other~=player then buildSRow(other) end end
 	Players.PlayerAdded:Connect(function(other) if other~=player then buildSRow(other) end end)
 	Players.PlayerRemoving:Connect(function(other) removeSRow(other) end)
-	sl:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-		ss2.CanvasSize=UDim2.new(0,0,0,sl.AbsoluteContentSize.Y+8)
-	end)
 end
 
 buildSneakPanel()
