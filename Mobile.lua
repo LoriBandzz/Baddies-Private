@@ -1846,16 +1846,33 @@ local function buildMobileUI()
 		return box
 	end
 	
-	mToggle(combatPage, {
-		name = "Preview Toggle",
-		state = false,
-		onActivate = function()
-			print("Enabled")
-		end,
-		onDeactivate = function()
-			print("Disabled")
-		end
-	})
+	local function addControl(parent, name)
+		mToggle(parent, {
+			name = name,
+			state = false,
+			onActivate = function()
+				print(name .. " enabled")
+			end,
+			onDeactivate = function()
+				print(name .. " disabled")
+			end
+		})
+	end
+
+	-- Combat
+	createCategory(combatPage, "Combat Features", 0)
+
+	addControl(combatPage, "Combo Spam")
+	addControl(combatPage, "Auto Stomp")
+
+	-- Defense
+	createCategory(defensePage, "Defense Features", 0)
+
+	addControl(defensePage, "Auto Block")
+	addControl(defensePage, "Auto Escape")
+	addControl(defensePage, "Block LooseFight")
+	addControl(defensePage, "Block BeatDown")
+	addControl(defensePage, "Block Duo Events")
 	
 	createCategory(utilityPage, "Information", 1)
 
